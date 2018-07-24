@@ -1,5 +1,4 @@
 import psycopg2
-from multiprocessing import Process
 from selenium import webdriver
 from time import sleep
 from selenium.common.exceptions import *
@@ -42,7 +41,7 @@ def volume_and_package(result):
         raise ValueError("Inte milliliter: " + volume)
     result.update({'volume': int(values[-2]), "packaging": packaging})
 
-def find_percentage(result):
+def handle_percentage(result):
     percentage = result["percentage"]
     if percentage == "":
         raise Exception("Inte över 18 år.")
@@ -63,27 +62,59 @@ def find_percentage(result):
     percentage = int(values[0]) + decimals
     result.update({'percentage': percentage})
 
+def handle_type(result):
+    type = result["type"]
+    type = type.split(sep=",")
+    result.update({'type': type[0].strip()})
+    if len(type) >= 2:
+        result.update({'subtype': type[1].strip()})
+    else:
+        result.update({'subtype': ""})
+        result.update({'subsubtype': ""})
+        return result
+    if len(type) >= 3:
+        result.update({'subsubtype': type[2].strip()})
+    else:
+        result.update({'subsubtype': ""})
+
+def fetch_percentage(browser):
+    fields = browser.find_element_by_id("destopview").text.split(sep="\n")
+    found = False
+    for field in fields:
+        if found:
+            return field
+        else:
+            if field == "Alkoholhalt":
+                found = True
+
+def fetch_type(browser):
+    return browser.find_element_by_class_name("category").text
+
 def fetch_values(page):
     price = page.find_element_by_class_name("price").text
     name = page.find_element_by_class_name("name").text
     volume = page.find_element_by_class_name("packaging").text
-    percentage = page.find_element_by_id("destopview").find_elements_by_tag_name("li")[1].find_element_by_tag_name("p").text
-    try:
-        typ = page.find_element_by_id("keyword-init-1").text
-    except NoSuchElementException:
-        typ = page.find_element_by_class_name("category").text
+    percentage = fetch_percentage(page)
+    typ = fetch_type(page)
     return {"type": typ, "price": price, "name": name, "volume": volume, "percentage": percentage}
 
 def calculate_apk(values):
-    apk = values["percentage"] * values["volume"] / values["price"]
-    values.update({'apk': round(apk)})
+    apk = values["percentage"] * values["volume"] / values["price"] / 100
+    values.update({'apk': round(apk, 3)})
     return values
 
-def insert_to_database(values):
-    conn = psycopg2.connect("dbname=systembolaget user=" + os.environ["DB_USER"] + " password=" + os.environ["DB_PW"] + " host=localhost")
-    conn.cursor().execute("insert into products (name, product_id, price, volume, percentage, apk, packaging, type) values (%s, %s, %s, %s, %s, %s, %s, %s) on conflict (product_id) do update set price=%s, apk=%s;", (values["name"], values["product_id"], values["price"], values["volume"], values["percentage"], values["apk"], values["packaging"], values["type"], values["price"], values["apk"]))
-    conn.commit()
-    conn.close()
+def insert_to_database(values, dbs):
+    dbs[1].execute('insert into products '
+                        '(name, product_id, price, volume, percentage, apk, packaging, type, subtype, subsubtype) '
+                        'values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) '
+                        'on conflict (product_id) do update set name=%s, price=%s, volume=%s, percentage=%s, '
+                        'apk=%s, packaging=%s, type=%s, subtype=%s, subsubtype=%s;',
+                        (values["name"], values["product_id"], values["price"], values["volume"],
+                        values["percentage"], values["apk"], values["packaging"], values["type"],
+                        values["subtype"], values["subsubtype"], values["name"], values["price"], values["volume"],
+                        values["percentage"], values["apk"], values["packaging"], values["type"],
+                        values["subtype"], values["subsubtype"]))
+    dbs[0].commit()
 
 def show_more(browser):
     browser.find_element_by_class_name("cmp-btn--show-more").click()
@@ -106,25 +137,35 @@ def find_links(page):
                 drink_links.append(path)
     return drink_links    
 
-def calculate_and_insert(result):
+def calculate_and_insert(result, dbs):
+    calculate(result)
+    insert_to_database(result, dbs)
+
+def calculate(result):
     convert_price(result)
     separate_name_and_id(result)
     volume_and_package(result)
-    find_percentage(result)
+    handle_percentage(result)
+    handle_type(result)
     calculate_apk(result)
-    insert_to_database(result)
 
 def interval(browser, lower, upper):
     browser.get("https://www.systembolaget.se/sok-dryck/?pricefrom=" + str(lower) + "&priceto=" + str(upper) + "&fullassortment=1")
 
 def default_intervals():
-    intervals = []
-    intervals.extend(range(0,200,5))
+    intervals = [0]
+    intervals.extend(range(10,200,5))
     intervals.extend(range(200,2000,20))
     intervals.extend(range(2000,52000,2000))
     return intervals
 
+def db_connection():
+    conn = psycopg2.connect("dbname=systembolaget user=" + os.environ["DB_USER"] + " password=" + os.environ["DB_PW"] + " host=localhost")
+    cur = conn.cursor()
+    return (conn, cur)
+
 def browse_intervals(browser, intervals):
+    dbs = db_connection()
     for i in range(len(intervals)-1):
         lower = intervals[i]
         upper = intervals[i+1]
@@ -143,20 +184,27 @@ def browse_intervals(browser, intervals):
             except Exception:
                 print("Fel på " + l)
                 continue
-            p = Process(target=calculate_and_insert, args=(result,))
-            p.start()    
+            calculate_and_insert(result, dbs)
+    dbs[1].close()
+    dbs[0].close()
 
 def browse_all(browser):
     intervals = default_intervals()
     browse_intervals(browser, intervals)
     
-def instantiate():
-    #browser = webdriver.Firefox(executable_path="webdriver/geckodriver")
-    browser = webdriver.Chrome(executable_path="webdriver/chromedriver")
+def instantiate(chromeOptions=None):
+    browser = webdriver.Chrome(executable_path="webdriver/chromedriver", chrome_options=chromeOptions)
     browser.get("https://www.systembolaget.se/sok-dryck/")
     eighteen_or_above(browser)
     return browser
+
+def instantiate_headless():
+    chromeOptions = webdriver.ChromeOptions()
+    chromeOptions.add_argument("headless")
+    prefs = {"profile.managed_default_content_settings.images":2}
+    chromeOptions.add_experimental_option("prefs",prefs)
+    return instantiate(chromeOptions)
     
 if __name__ == "__main__":
-    browser = instantiate()
+    browser = instantiate_headless()
     browse_all(browser)

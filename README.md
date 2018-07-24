@@ -12,16 +12,18 @@ Den räknar även ut alla produkters alkohol per krona [10 µl/kr].
 ```sql
 CREATE DATABASE systembolaget;
 
-CREATE TABLE products COLUMNS(
-    integer product_id,
-    float price,
-    varchar name,
-    integer volume,
-    float percentage,
-    integer apk,
-    varchar packaging,
-    varchar type
-)
+CREATE TABLE products (
+    product_id integer UNIQUE,
+    price float,
+    name varchar,
+    volume integer,
+    percentage float,
+    apk float,
+    packaging varchar,
+    type varchar,
+    subtype varchar,
+    subsubtype varchar
+);
 ```
 
 ### Webdriver
@@ -30,7 +32,7 @@ Chromedriver (eller valfri) behöver finnas i ./webdriver/
 
 ### Python
 
-Programmet är skrivet i Python 3. Selenium från PyPi krävs.
+Programmet är skrivet i Python 3. Selenium och psycopg2 från PyPi krävs.
 
 ## Bakgrund
 
