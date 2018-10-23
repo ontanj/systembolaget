@@ -10,7 +10,7 @@ class TestItem(unittest.TestCase):
         self.assertEqual(v, s.data[key])
         
     def test_create_invalid_argument(self):
-        self.assertRaises(TypeError,SysItem(),**{'vol': 3})
+        self.assertRaises(TypeError,SysItem,**{'vol': 3})
 
     def test_add_data_to_empty(self):
         v = 3
@@ -47,6 +47,11 @@ class TestItem(unittest.TestCase):
         i1 = SysItem(apk=3)
         i2 = SysItem(apk=2, price=10)
         self.assertGreater(i1, i2)
+
+    def test_subscriptable(self):
+        i = SysItem(apk=3)
+        self.assertEqual(i["apk"], 3)
+        self.assertEqual(i.apk, 3)
 
 if __name__ == "__main__":
     unittest.main()

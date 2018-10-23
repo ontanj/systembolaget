@@ -58,3 +58,6 @@ class SysItem:
 
     def _arg_sort(self, arg):
         return self.allowed_args.index(arg)
+
+    def __getitem__(self, index):
+        return self.__getattr__(index)
