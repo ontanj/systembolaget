@@ -1,21 +1,23 @@
 import unittest
-from results import SysResults
+from databaseresults import DatabaseResults
 from item import SysItem
+import os
+import time
 
-class TestResults(unittest.TestCase):
+class TestDatabaseResults(unittest.TestCase):
 
     def test_create(self):
-        s = SysResults()
+        s = DatabaseResults(database_credentials=(os.environ["DB"], os.environ["DB_USER"], os.environ["DB_PW"]))
 
     def test_add(self):
-        r = SysResults()
+        r = DatabaseResults(database_credentials=(os.environ["DB"], os.environ["DB_USER"], os.environ["DB_PW"]))
         i = {"apk": 6, "price": 9}
         si = SysItem(**i)
         r.add_item(si)
-        self.assertEqual(r.items[0], si)
+        self.assertEqual(r[0], si)
 
     def test_sort_by_apk(self):
-        r = SysResults()
+        r = DatabaseResults(database_credentials=(os.environ["DB"], os.environ["DB_USER"], os.environ["DB_PW"]))
         i1 = SysItem(**{"apk": 6, "price": 8})
         i2 = SysItem(**{"apk": 8, "price": 9})
         i3 = SysItem(**{"apk": 4, "price": 10})
@@ -26,10 +28,10 @@ class TestResults(unittest.TestCase):
                 item2 = r[index+1]
             except IndexError:
                 break
-            self.assertGreater(item.data["apk"], item2.data["apk"])
+            self.assertGreater(item["apk"], item2["apk"])
 
     def test_sort_by_price(self):
-        r = SysResults()
+        r = DatabaseResults(database_credentials=(os.environ["DB"], os.environ["DB_USER"], os.environ["DB_PW"]))
         i1 = SysItem(**{"apk": 6, "price": 8})
         i2 = SysItem(**{"apk": 8, "price": 5})
         i3 = SysItem(**{"apk": 4, "price": 10})
@@ -40,7 +42,7 @@ class TestResults(unittest.TestCase):
                 item2 = r[index+1]
             except IndexError:
                 break
-            self.assertLess(item.data["price"], item2.data["price"])
+            self.assertLess(item["price"], item2["price"])
 
 if __name__ == "__main__":
     unittest.main()

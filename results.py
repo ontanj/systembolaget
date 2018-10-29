@@ -1,42 +1,29 @@
-from item import SysItem
-
 class SysResults:
 
     def __init__(self, print_length=20):
-        self.items = []
         self.print_length = print_length
+        self.errors = []
 
     def set_print_length(self, length):
         self.print_length = length
 
     def add_item(self, item):
-        if not isinstance(item, SysItem):
-            raise TypeError("Not a SysItem.")
-        self.items.append(item)
-        return self
-    
+        raise NotImplementedError("To be implemented by subclass")
+
+    def sort(sort, key, reverse):
+        raise NotImplementedError("To be implemented by subclass")
+
     def __iter__(self):
-        return iter(self.items)
+        raise NotImplementedError("To be implemented by subclass")
 
-    def sort(self, key="apk", reverse=False):
-        if key == "apk":
-            reverse = not reverse
-        self.items.sort(key=lambda x: x[key], reverse=reverse)
-
-    def __getitem__(self,index):
-        return self.items[index]
+    def __getitem__(self, index):
+        raise NotImplementedError("To be implemented by subclass")
 
     def __repr__(self):
-        return "SysResults" + str(self.items)
+        raise NotImplementedError("To be implemented by subclass")
 
     def __str__(self):
-        i = 1
-        string = ""
-        for item in self.items:
-            if i > self.print_length:
-                break
-            string += str(i) + ": " + item.__str__() + "\n"
-            i += 1
-        diff = len(self.items) - i + 1
-        string += "and {diff} stycken till...\n"
-        return string
+        raise NotImplementedError("To be implemented by subclass")
+
+    def add_error(self, link):
+        self.errors.append(l)

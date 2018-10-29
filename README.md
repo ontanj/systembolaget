@@ -22,7 +22,8 @@ CREATE TABLE products (
     packaging varchar,
     type varchar,
     subtype varchar,
-    subsubtype varchar
+    subsubtype varchar,
+    time float
 );
 ```
 
