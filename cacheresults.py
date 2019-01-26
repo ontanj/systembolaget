@@ -9,6 +9,7 @@ class CacheResults(SysResults):
         self.items = []
         self.print_length = print_length
         self.time = int(time.time())
+        super().__init__(print_length=print_length)
 
     def add_item(self, item):
         if not isinstance(item, SysItem):
@@ -35,9 +36,9 @@ class CacheResults(SysResults):
         string = ""
         for item in self.items:
             if i > self.print_length:
+                diff = len(self.items) - i + 1
+                string += f'och {diff} stycken till...\n'
                 break
             string += str(i) + ": " + item.__str__() + "\n"
             i += 1
-        diff = len(self.items) - i + 1
-        string += "och {diff} stycken till...\n"
         return string

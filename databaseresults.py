@@ -12,6 +12,7 @@ class DatabaseResults(SysResults):
         self.sort_key = "apk"
         self.reverse = False
         self.all_time = False
+        super().__init__(print_length=print_length)
 
     def set_all_time(self, all_time):
         self.all_time = all_time
@@ -39,7 +40,7 @@ class DatabaseResults(SysResults):
         return self
     
     def __iter__(self):
-        items = self._get_from_database(0, self.print_length)
+        items = self._get_from_database(0)
         for i in items:
             yield i 
 
@@ -51,7 +52,7 @@ class DatabaseResults(SysResults):
         items = self._get_from_database(index)
         return items[0]
 
-    def _get_from_database(self, index, limit=1):
+    def _get_from_database(self, index):
         if self.all_time:
             where = ""
         else:
@@ -67,9 +68,9 @@ class DatabaseResults(SysResults):
             else:
                 desc = ""
         fields = ("name", "volume", "packaging", "percentage", "price", "product_id", "type", "subtype", "subsubtype", "apk")
-        self.cur.execute('select "name", "volume", "packaging", "percentage", "price", "product_id", "type", "subtype", "subsubtype", "apk" from products ' + where + ' order by ' + self.sort_key + ' ' + desc + ' offset %s limit %s;', (index,limit))
+        self.cur.execute('select "name", "volume", "packaging", "percentage", "price", "product_id", "type", "subtype", "subsubtype", "apk" from products ' + where + ' order by ' + self.sort_key + ' ' + desc + ' offset %s limit %s;', (index,self.print_length))
         item_array = []
-        rows = self.cur.fetchmany(limit)
+        rows = self.cur.fetchmany(self.print_length)
         for data in rows:
             d = dict([(fields[i], data[i]) for i in range(len(fields))])
             item_array.append(SysItem(**d))

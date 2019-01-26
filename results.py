@@ -26,4 +26,4 @@ class SysResults:
         raise NotImplementedError("To be implemented by subclass")
 
     def add_error(self, link):
-        self.errors.append(l)
+        self.errors.append(link)
