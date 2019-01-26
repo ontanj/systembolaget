@@ -7,17 +7,17 @@ import time
 class TestDatabaseResults(unittest.TestCase):
 
     def test_create(self):
-        s = DatabaseResults(database_credentials=(os.environ["DB"], os.environ["DB_USER"], os.environ["DB_PW"]))
+        s = DatabaseResults(database_credentials=(os.environ["DB_TEST"], os.environ["DB_USER"], os.environ["DB_PW"]))
 
     def test_add(self):
-        r = DatabaseResults(database_credentials=(os.environ["DB"], os.environ["DB_USER"], os.environ["DB_PW"]))
+        r = DatabaseResults(database_credentials=(os.environ["DB_TEST"], os.environ["DB_USER"], os.environ["DB_PW"]))
         i = {"apk": 6, "price": 9}
         si = SysItem(**i)
         r.add_item(si)
         self.assertEqual(r[0], si)
 
     def test_sort_by_apk(self):
-        r = DatabaseResults(database_credentials=(os.environ["DB"], os.environ["DB_USER"], os.environ["DB_PW"]))
+        r = DatabaseResults(database_credentials=(os.environ["DB_TEST"], os.environ["DB_USER"], os.environ["DB_PW"]))
         i1 = SysItem(**{"apk": 6, "price": 8})
         i2 = SysItem(**{"apk": 8, "price": 9})
         i3 = SysItem(**{"apk": 4, "price": 10})
@@ -31,7 +31,7 @@ class TestDatabaseResults(unittest.TestCase):
             self.assertGreater(item["apk"], item2["apk"])
 
     def test_sort_by_price(self):
-        r = DatabaseResults(database_credentials=(os.environ["DB"], os.environ["DB_USER"], os.environ["DB_PW"]))
+        r = DatabaseResults(database_credentials=(os.environ["DB_TEST"], os.environ["DB_USER"], os.environ["DB_PW"]))
         i1 = SysItem(**{"apk": 6, "price": 8})
         i2 = SysItem(**{"apk": 8, "price": 5})
         i3 = SysItem(**{"apk": 4, "price": 10})
