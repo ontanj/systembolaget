@@ -13,6 +13,11 @@ class SysCrawler:
     def __init__(self, browser_path="webdriver/chromedriver", database=False, verbose=0, headless=True):
         self.verbose = verbose
         self._instantiate(browser_path, headless)
+        rows, columns = os.popen('stty size', 'r').read().split()
+        self.window_size = int(columns)
+        self.bar_size = self.window_size - 7
+        self._last_percent = 0
+        self._last_progress = 0
         self._verbose("Surfar in på Systembolagets hemsida.", 2)
         self.browser.get("https://www.systembolaget.se/sok-dryck/")
         self._eighteen_or_above()
@@ -42,8 +47,10 @@ class SysCrawler:
         self.browser = webdriver.Chrome(executable_path=browser_path, options=chromeOptions)
         
     def _verbose(self, message, level):
+        self._clear_line()
         if self.verbose >= level:
             print(message)
+        self._print_progress_bar()
 
     def _eighteen_or_above(self):
         self._verbose("Verifierar över 18 år.", 2)
@@ -54,6 +61,9 @@ class SysCrawler:
 
     def start(self):
         self.visited = []
+        self.interval(self.intervals[0],self.intervals[-1])
+        total_no = self._number_of_items()
+        total_index = 0
         for i in range(len(self.intervals)-1):
             lower = self.intervals[i]
             upper = self.intervals[i+1]
@@ -66,8 +76,10 @@ class SysCrawler:
             self._verbose(str(num) + " produkter i intervallet.\n", 1)
             index = 1
             for l in links:
+                self._progress_bar(total_index/total_no)
                 self.visited.append(l)
                 self._verbose("Surfar till " + l, 2)
+                total_index += 1
                 try:
                     self.goto(l)
                     si = self._fetch_values()
@@ -77,10 +89,24 @@ class SysCrawler:
                     self._verbose(str(e), 1)
                     index += 1
                     continue
+                if si.price == upper:
+                    total_index -= 1
+                    continue
                 self._verbose(str(index) + ": " + si.__str__(), 2)
                 self.results.add_item(si)
                 index += 1
+        print(" "*self.window_size, end="\r")
 
+    def _progress_bar(self, share):
+        self._last_percent = int(round(share*100))
+        self._last_progress = int(round(share*self.bar_size))
+        self._print_progress_bar()
+
+    def _print_progress_bar(self):
+        print(str(self._last_percent) + "% |" + "█"*self._last_progress + " "*(self.bar_size-self._last_progress) + "|", end='\r')
+
+    def _clear_line(self):
+        print(" "*self.window_size, end="\r")
     
     def interval(self, lower, upper):
         self.goto("https://www.systembolaget.se/sok-dryck/?pricefrom=" + str(lower) + "&priceto=" + str(upper) + "&fullassortment=1")
@@ -210,8 +236,9 @@ if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Wrong number of arguments!")
         exit(1)
-    sc = SysCrawler()
+    sc = SysCrawler(verbose=0)
     sc.start()
     sc.results.sort()
     with open(sys.argv[1], 'w') as file:
         file.write(json.dumps([item.data for item in sc.results], ensure_ascii=False, indent=2))
+    print(f'Successfully saved {len(sc.results.items)} entries to {sys.argv[1]}!')
