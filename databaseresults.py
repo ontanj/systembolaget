@@ -84,11 +84,13 @@ class DatabaseResults(SysResults):
         if self.all_time:
             return "DatabaseResults All-Time"
         else:
-            return "DatabaseResults at ({self.time})"
+            return f'DatabaseResults at ({self.time})'
 
     def __str__(self):
         rows = self._get_from_database(0)
         string = ""
+        if rows == []:
+            return "No DatabaseResults"
         for (i,item) in enumerate(rows,1):
             string += str(i) + ": " + item.__str__() + "\n"
         if i >= self.print_length:
