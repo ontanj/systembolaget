@@ -39,7 +39,7 @@ class SysCrawler:
             chromeOptions.add_experimental_option("prefs",prefs)
         else:
             chromeOptions = None
-        self.browser = webdriver.Chrome(executable_path=browser_path, chrome_options=chromeOptions)
+        self.browser = webdriver.Chrome(executable_path=browser_path, options=chromeOptions)
         
     def _verbose(self, message, level):
         if self.verbose >= level:
