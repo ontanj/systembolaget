@@ -5,6 +5,8 @@ import os
 from item import SysItem
 from cacheresults import CacheResults
 from databaseresults import DatabaseResults
+import sys
+import json
 
 
 class SysCrawler:
@@ -203,3 +205,13 @@ class SysCrawler:
         apk = percentage * volume / price / 100
         apk = round(apk, 3)
         return apk
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Wrong number of arguments!")
+        exit(1)
+    sc = SysCrawler()
+    sc.start()
+    sc.results.sort()
+    with open(sys.argv[1], 'w') as file:
+        file.write(json.dumps([item.data for item in sc.results], ensure_ascii=False, indent=2))
