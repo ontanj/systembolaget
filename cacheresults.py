@@ -42,3 +42,6 @@ class CacheResults(SysResults):
             string += str(i) + ": " + item.__str__() + "\n"
             i += 1
         return string
+
+    def __len__(self):
+        return len(self.items)

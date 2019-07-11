@@ -241,4 +241,4 @@ if __name__ == "__main__":
     sc.results.sort()
     with open(sys.argv[1], 'w') as file:
         file.write(json.dumps([item.data for item in sc.results], ensure_ascii=False, indent=2))
-    print(f'Successfully saved {len(sc.results.items)} entries to {sys.argv[1]}!')
+    print(f'Successfully saved {len(sc.results)} entries to {sys.argv[1]}!')
